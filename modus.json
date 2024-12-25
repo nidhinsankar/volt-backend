@@ -12,6 +12,18 @@
       "sourceModel": "meta-llama/Meta-Llama-3.1-8B-Instruct",
       "provider": "hugging-face",
       "connection": "hypermode"
+    },
+    "minilm": {
+      "sourceModel": "sentence-transformers/all-MiniLM-L6-v2",
+      "connection": "hypermode",
+      "provider": "hugging-face"
+    }
+  },
+  "connections": {
+    "dgraph-grpc": {
+      "type": "dgraph",
+      "grpcTarget": "blue-surf-1350162.grpc.us-east-1.aws.cloud.dgraph.io:443",
+      "key": "{{DGRAPH_KEY}}"
     }
   }
 }
