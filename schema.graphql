@@ -1,13 +1,17 @@
-id: string @index(exact) .
-title: string @index(term) .
-url: string @index(exact) .
-type: string @index(exact) .
-embedding: float32vector @index(hnsw(metric:"cosine")) .
+type Message {
+    Message.id: string @index(exact) .
+    Message.content: string .
+    Message.timestamp: datetime @index(hour) .
+    Message.sender: string @index(exact) .
+    Message.conversationId: string @index(exact) .
+    Message.embedding: [float] @index(vector) .
+    dgraph.type: string .
+}
 
-type Content {
-  id
-  title
-  url
-  type
-  embedding
+type Conversation {
+    Conversation.id: string @index(exact) .
+    Conversation.title: string @index(exact) .
+    Conversation.created: datetime @index(hour) .
+    Conversation.lastUpdated: datetime @index(hour) .
+    dgraph.type: string .
 }
