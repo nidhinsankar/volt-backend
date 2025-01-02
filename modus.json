@@ -22,7 +22,7 @@
   "connections": {
     "dgraph-grpc": {
       "type": "dgraph",
-      "grpcTarget": "blue-surf-1350162.grpc.us-east-1.aws.cloud.dgraph.io:443",
+      "grpcTarget": "blue-surf-1350223.grpc.us-east-1.aws.cloud.dgraph.io:443",
       "key": "{{DGRAPH_KEY}}"
     }
   }

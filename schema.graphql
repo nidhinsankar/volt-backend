@@ -1,17 +1,33 @@
 type Message {
-    Message.id: string @index(exact) .
-    Message.content: string .
-    Message.timestamp: datetime @index(hour) .
-    Message.sender: string @index(exact) .
-    Message.conversationId: string @index(exact) .
-    Message.embedding: [float] @index(vector) .
-    dgraph.type: string .
+  Message.id: string @index(exact) .
+  Message.content:  string @index(term).
+  Message.timestamp: DateTime @search(by: [hour]).
+  Message.sender: String  string @index(term).
+  Message.conversationId:  string @index(term).
+  Message.embedding: float32vector @index(hnsw(metric:"cosine")).
 }
 
+
 type Conversation {
-    Conversation.id: string @index(exact) .
-    Conversation.title: string @index(exact) .
-    Conversation.created: datetime @index(hour) .
-    Conversation.lastUpdated: datetime @index(hour) .
-    dgraph.type: string .
+  Conversation.id: string @index(exact) .
+  Conversation.title: string @index(exact) .
+  Conversation.created: DateTime @index(exact). 
+  Conversation.lastUpdated: DateTime @search(by: [hour]).
+}
+
+type Message {
+  Message.id: string  .
+  Message.content:  string .
+  Message.timestamp: DateTime .
+  Message.sender: String  string .
+  Message.conversationId:  string .
+  Message.embedding: float32vector 
+}
+
+
+type Conversation {
+  Conversation.id: string  .
+  Conversation.title: string  .
+  Conversation.created: DateTime  .
+  Conversation.lastUpdated: DateTime 
 }

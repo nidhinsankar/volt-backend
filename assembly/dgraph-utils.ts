@@ -8,10 +8,12 @@ class Uid {
   uid: string = "";
 }
 
+
 @json
 class UidResult {
   uids: Uid[] = [];
 }
+
 
 @json
 export class ListOf<T> {

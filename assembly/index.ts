@@ -1,3 +1,151 @@
+// import { dgraph } from "@hypermode/modus-sdk-as";
+// import { JSON } from "json-as";
+// import { Message, Conversation } from "./classes";
+// import { embedText } from "./embeddings";
+
+// const DGRAPH_CONNECTION = "dgraph-grpc";
+
+// const schema = `
+//   Conversation.id: string @id .
+//   Conversation.title: string .
+//   Conversation.created: datetime .
+//   Conversation.lastUpdated: datetime .
+//   Message.id: string @id .
+//   Message.content: string .
+//   Message.timestamp: datetime .
+//   Message.sender: string .
+//   Message.conversationId: string @index(exact) .
+//   Message.embedding: [float] @index(vector) .
+// `;
+
+// export function initializeSchema(): void {
+//   const schemaMutation = new dgraph.Mutation(schema);
+//   dgraph.execute(DGRAPH_CONNECTION, new dgraph.Request(null, [schemaMutation]));
+// }
+
+// export function createConversation(title: string): string {
+//   const conversation = new Conversation();
+//   conversation.id = generateUuid();
+//   conversation.title = title;
+//   conversation.created = new Date(Date.now()).toISOString();
+//   conversation.lastUpdated = conversation.created;
+
+//   const mutationJson = JSON.stringify({
+//     set: [
+//       {
+//         uid: "_:conv",
+//         "dgraph.type": "Conversation",
+//         "Conversation.id": conversation.id,
+//         "Conversation.title": conversation.title,
+//         "Conversation.created": conversation.created,
+//         "Conversation.lastUpdated": conversation.lastUpdated,
+//       },
+//     ],
+//   });
+
+//   const mutation = new dgraph.Mutation(mutationJson);
+//   dgraph.execute(DGRAPH_CONNECTION, new dgraph.Request(null, [mutation]));
+//   return conversation.id;
+// }
+
+// export function sendMessage(
+//   content: string,
+//   sender: string,
+//   conversationId: string,
+// ): void {
+//   const message = new Message();
+//   message.id = generateUuid();
+//   message.content = content;
+//   message.timestamp = new Date(Date.now()).toISOString();
+//   message.sender = sender;
+//   message.conversationId = conversationId;
+
+//   const embedding = embedText([content])[0];
+//   const mutationJson = JSON.stringify({
+//     set: [
+//       {
+//         uid: "_:msg",
+//         "dgraph.type": "Message",
+//         "Message.id": message.id,
+//         "Message.content": message.content,
+//         "Message.timestamp": message.timestamp,
+//         "Message.sender": message.sender,
+//         "Message.conversationId": message.conversationId,
+//         "Message.embedding": embedding,
+//       },
+//     ],
+//   });
+
+//   const mutation = new dgraph.Mutation(mutationJson);
+//   dgraph.execute(DGRAPH_CONNECTION, new dgraph.Request(null, [mutation]));
+//   updateConversationTimestamp(conversationId);
+// }
+
+// export function getConversationHistory(conversationId: string): Message[] {
+//   const query = `{
+//     list(func: type(Message)) @filter(eq(Message.conversationId, "${conversationId}")) {
+//       Message.id
+//       Message.content
+//       Message.timestamp
+//       Message.sender
+//       Message.conversationId
+//     }
+//   }`;
+
+//   const queryString = new dgraph.Query(query);
+//   const response = dgraph.execute(
+//     DGRAPH_CONNECTION,
+//     new dgraph.Request(queryString),
+//   );
+//   const data = JSON.parse<ListOf<Message>>(response.Json);
+//   return data.list;
+// }
+
+// export function searchMessages(query: string, topK: i32 = 5): Message[] {
+//   const embedding = embedText([query])[0];
+//   const queryStr = `{
+//     list(func: type(Message), first: ${topK}) @filter(near(Message.embedding, ${JSON.stringify(embedding)})) {
+//       Message.id
+//       Message.content
+//       Message.timestamp
+//       Message.sender
+//       Message.conversationId
+//     }
+//   }`;
+
+//   const queryString = new dgraph.Query(queryStr);
+//   const response = dgraph.execute(
+//     DGRAPH_CONNECTION,
+//     new dgraph.Request(queryString),
+//   );
+//   const data = JSON.parse<ListOf<Message>>(response.Json);
+//   return data.list;
+// }
+
+// function updateConversationTimestamp(conversationId: string): void {
+//   const timestamp = new Date(Date.now()).toISOString();
+//   const mutationJson = JSON.stringify({
+//     set: [
+//       {
+//         uid: "_:conv",
+//         "dgraph.type": "Conversation",
+//         "Conversation.id": conversationId,
+//         "Conversation.lastUpdated": timestamp,
+//       },
+//     ],
+//   });
+
+//   const mutation = new dgraph.Mutation(mutationJson);
+//   dgraph.execute(DGRAPH_CONNECTION, new dgraph.Request(null, [mutation]));
+// }
+
+// function generateUuid(): string {
+//   return Date.now().toString(36) + Math.random().toString(36).substr(2);
+// }
+
+// interface ListOf<T> {
+//   list: T[];
+// }
 import { dgraph } from "@hypermode/modus-sdk-as";
 import { JSON } from "json-as";
 import { Message, Conversation } from "./classes";
@@ -60,6 +208,30 @@ export function sendMessage(
   updateConversationTimestamp(conversationId);
 }
 
+export function addSchemaToDatabase(): string {
+  const newSchema = `
+type Message {
+  Message.id: string @index(exact)
+  Message.content: string @index(term)
+  Message.timestamp: DateTime @search(by: [hour])
+  Message.sender: string @index(term)
+  Message.conversationId: string @index(term)
+  Message.embedding: float32vector @index(hnsw(metric:"cosine"))
+}
+
+type Conversation {
+  Conversation.id: string @index(exact)
+  Conversation.title: string @index(exact)
+  Conversation.created: DateTime @index(exact)
+  Conversation.lastUpdated: DateTime @search(by: [hour])
+}
+`;
+  // Call the alterSchema function from the Dgraph API
+  const response = dgraph.alterSchema(DGRAPH_CONNECTION, newSchema);
+  console.log(response);
+  return response;
+}
+
 export function getConversationHistory(conversationId: string): Message[] {
   const query = new dgraph.Query(`{
         list(func: eq(Message.conversationId, "${conversationId}")) {
@@ -113,9 +285,9 @@ function generateUuid(): string {
 }
 // import { JSON } from "json-as";
 // import { dgraph } from "@hypermode/modus-sdk-as";
-// import { Content } from "./classes";
+// import { Conversation,Message } from "./classes";
 // import { embedText } from "./embeddings";
-// import { buildContentMutationJson } from "./content-helpers";
+// import { buildMessageMutationJson,buildConversationMutationJson } from "./chat-helpers";
 // import {
 //   deleteNodePredicates,
 //   ListOf,
@@ -267,20 +439,20 @@ function generateUuid(): string {
 
 //   const response = dgraph.execute(DGRAPH_CONNECTION, new dgraph.Request(query));
 //   const data = JSON.parse<ListOf<Content>>(response.Json);
-//   return data.list;
-// }
+//    return data.list;
+//  }
 
-// // export * from "./models";
-// // export * from "./generateText";
-// // export {
-// //   createThread,
-// //   deleteThread,
-// //   getAllThreads,
-// //   getCurrentUserId,
-// //   getReply,
-// //   getThreadById,
-// //   getThreadMessages,
-// // } from "./chat";
-// // export function sayHello(name: string | null = null): string {
-// //   return `Hello, ${name || "World"}!`;
-// // }
+// export * from "./models";
+// export * from "./generateText";
+// export {
+//   createThread,
+//   deleteThread,
+//   getAllThreads,
+//   getCurrentUserId,
+//   getReply,
+//   getThreadById,
+//   getThreadMessages,
+// } from "./chat";
+// export function sayHello(name: string | null = null): string {
+//   return `Hello, ${name || "World"}!`;
+// }
